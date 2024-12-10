@@ -1,0 +1,43 @@
+{
+    "main_directory": "ace_basic",
+    "subdirectories": {
+        "": {
+            "files": []
+        },
+        "Property": {
+            "files": [
+                "xxxxx-PropMap.pdf",
+                "xxxxx-PropDetails.pdf",
+                "xxxxx-FloodReport.pdf"
+            ]
+        },
+        "Others": {
+            "files": []
+        },
+        "Others/Structural": {
+            "files": []
+        },
+        "Others/Survey": {
+            "files": []
+        },
+        "PM": {
+            "files": []
+        },
+        "Plans": {
+            "files": []
+        },
+        "Deliverables": {
+            "files": []
+        },
+        "Permitting": {
+            "files": []
+        },
+        "Cadd": {
+            "files": [
+                "xxxxx-Plan-SITE.dwg",
+                "xxxxx-Base-TOPO.dwg",
+                "xxxxx-Residence.dst"
+            ]
+        }
+    }
+}
