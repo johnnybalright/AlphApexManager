@@ -422,7 +422,9 @@ def main():
     # input()
     parser = argparse.ArgumentParser(description="Template Manager")
     parser.add_argument(
-        "--generate", action="store_true", help="Generate from a template"
+        "--generate",
+        action="store_true",
+        help="Generate from a template"
     )
     parser.add_argument(
         "--template",
@@ -431,17 +433,20 @@ def main():
         help="Template to use (default: defaults/ace_basic.json)",
     )
     parser.add_argument(
-        "--output", type=str, required=True, help="Output directory"
+        "--output",
+        type=str,
+        required=False,
+        help="Output directory"
     )
     parser.add_argument(
         "--project_name",
         type=str,
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--project_number",
         type=str,
-        required=True,
+        required=False,
     )
 
     args = parser.parse_args()
