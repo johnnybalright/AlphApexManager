@@ -89,7 +89,7 @@ class TemplateManager:
         """Load a template."""
         if template_name.startswith("defaults/"):
             path = DEFAULT_TEMPLATES_DIR / template_name.replace(
-                "default/", ""
+                "defaults/", ""
             )
         else:
             path = TEMPLATES_DIR / template_name.replace("user_created/", "")
