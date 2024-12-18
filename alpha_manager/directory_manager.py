@@ -3,9 +3,11 @@ import json
 import shutil
 from pathlib import Path
 
-TEMPLATES_DIR = Path("templates")
+script_dir = Path(__file__).parent
+
+TEMPLATES_DIR = script_dir / "templates"
 DEFAULT_TEMPLATES_DIR = TEMPLATES_DIR / "defaults"
-LOG_FILE = "directory_manager.log"
+LOG_FILE = script_dir / "directory_manager.log"
 FILE_TEMPLATES_DIR = TEMPLATES_DIR / "file_templates"
 USER_CREATED_DIRS = TEMPLATES_DIR / "user_created"
 
