@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 from pathlib import Path
+import argparse
 
 script_dir = Path(__file__).parent
 
@@ -31,7 +32,10 @@ class TemplateManager:
         """List available templates."""
         templates = []
         templates.extend(
-            [f"defaults/{t.name}" for t in DEFAULT_TEMPLATES_DIR.glob("*.json")]
+            [
+                f"defaults/{t.name}"
+                for t in DEFAULT_TEMPLATES_DIR.glob("*.json")
+            ]
         )
         templates.extend(
             [f"user_created/{t.name}" for t in TEMPLATES_DIR.glob("*.json")]
@@ -215,11 +219,11 @@ class TemplateManager:
     def preview_template(self, template):
         """Preview the template's structure."""
         self.display_template_tree(template)
-        
+
     def validate_directory_path(self, path):
         """Validate a directory path and provide detailed feedback."""
         # Strip non-alphanumeric characters from the start and end of the path
-        cleaned_path = path.strip("!@#$%^&*()_+={}[]|:;\'<>,.?~`")
+        cleaned_path = path.strip("!@#$%^&*()_+={}[]|:;'<>,.?~`")
 
         if cleaned_path != path:
             print(f"DEBUG: Path cleaned from '{path}' to '{cleaned_path}'")
@@ -234,19 +238,24 @@ class TemplateManager:
             # Attempt to access the directory to check for permissions
             _ = os.listdir(cleaned_path)
         except PermissionError:
-            return False, f"Permission denied: Cannot access directory '{cleaned_path}'"
+            return (
+                False,
+                f"Permission denied: Cannot access directory '{cleaned_path}'",
+            )
         return True, f"Valid directory: '{cleaned_path}'", cleaned_path
 
     def clone_directory(self, source_dir, output_template_name):
         """Clone an existing directory structure into a template."""
-        is_valid, message, cleaned_path = self.validate_directory_path(source_dir)
-        
+        is_valid, message, cleaned_path = self.validate_directory_path(
+            source_dir
+        )
+
         if not is_valid:
             print(f"ERROR: {message}")
             return
         else:
             print(f"SUCCESS: {message}")
-            
+
         # if not os.path.isdir(source_dir):
         #     print(f"'{source_dir}' is not a valid directory.")
         #     return
@@ -320,6 +329,7 @@ class TemplateManager:
 
     def display_template_tree(self, template):
         """Display the template as a tree structure."""
+
         def print_tree(subdir, contents, prefix=""):
             """Recursive helper to print subdirectories and files."""
             subdirs = list(contents.keys())
@@ -334,7 +344,9 @@ class TemplateManager:
                     continue
 
                 # Prepare the prefix for nested content
-                sub_prefix = f"{prefix}    " if is_last_subdir else f"{prefix}│   "
+                sub_prefix = (
+                    f"{prefix}    " if is_last_subdir else f"{prefix}│   "
+                )
 
                 # Print the files in the current subdirectory
                 for j, file_name in enumerate(contents[sub]["files"]):
@@ -348,12 +360,106 @@ class TemplateManager:
         print(template["main_directory"])
         print_tree("", template["subdirectories"])
 
+    def modify_template(self, template, project_number, project_name):
+        """
+        Modify the given template by replacing 'xxxxx' in file names with the project_number
+        and updating the main_directory key with "project_number-project_name".
+
+        Args:
+            template (dict): The template to modify.
+            project_number (str): The project number to use.
+            project_name (str): The project name to use.
+
+        Returns:
+            dict: The modified template.
+        """
+        # Update the main_directory
+        template["main_directory"] = f"{project_name}-{project_number}"
+
+        # Iterate over subdirectories to replace 'xxxxx' in file names
+        for subdir, contents in template["subdirectories"].items():
+            if "files" in contents:
+                for file in contents["files"]:
+                    if "name" in file and "xxxxx" in file["name"]:
+                        file["name"] = file["name"].replace(
+                            "xxxxx", project_number
+                        )
+
+        return template
+
+    def generate_default(
+        self,
+        project_number,
+        project_name,
+        template_name="defaults/ace_basic.json",
+        output_dir="output",
+    ):
+        """Generate a default template."""
+        template = self.load_template(template_name)
+        # template = self.modify_template(template, project_number, project_name)
+        if not template:
+            return
+        if not self.validate_template(template, template_name):
+            print("Generation aborted due to invalid template.")
+            return
+        template = self.modify_template(template, project_number, project_name)
+        # if not self.validate_template(template, template_name):
+        #     print("Generation aborted due to invalid template.")
+        #     return
+        main_dir = Path(output_dir) / template["main_directory"]
+        os.makedirs(main_dir, exist_ok=True)
+        for subdir, contents in template["subdirectories"].items():
+            subdir_path = main_dir / subdir
+            os.makedirs(subdir_path, exist_ok=True)
+            for file_info in contents["files"]:
+                file_path = subdir_path / file_info["name"]
+                if file_info["type"] == "empty":
+                    file_path.touch()
+
 
 def main():
     # print("Press Enter to use AlphApex Directory Manager")
     # input()
+    parser = argparse.ArgumentParser(description="Template Manager")
+    parser.add_argument(
+        "--generate", action="store_true", help="Generate from a template"
+    )
+    parser.add_argument(
+        "--template",
+        type=str,
+        default="defaults/ace_basic.json",
+        help="Template to use (default: defaults/ace_basic.json)",
+    )
+    parser.add_argument(
+        "--output", type=str, required=True, help="Output directory"
+    )
+    parser.add_argument(
+        "--project_name",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--project_number",
+        type=str,
+        required=True,
+    )
+
+    args = parser.parse_args()
+
     manager = TemplateManager()
-    
+
+    if args.generate:
+        print(
+            f"Generating directory structure from template '{args.template}' into '{args.output}'"
+        )
+        manager.generate_default(
+            project_number=args.project_number,
+            project_name=args.project_name,
+            template_name=args.template,
+            output_dir=args.output,
+        )
+        return
+
     while True:
         print("\nAlphApex Directory Manager\n\nChoose an action:")
         print("  1) Manage/Create Templates")
@@ -363,7 +469,7 @@ def main():
         print("  5) Export Directory Map")
         print("  6) Exit")
         choice = input("Enter your choice (1-6): ").strip()
-        
+
         if choice == "1":
             print("\nDirectory Template Management:")
             print("  1) Create Directory Template")
@@ -373,43 +479,35 @@ def main():
             print("  5) File Template Management")
             print("  6) Exit")
             action = input("Choose an action (1-6): ").strip()
-            
+
             if action == "1":
                 manager.create_template()
-                
+
             elif action == "2":
                 templates = manager.list_templates()
                 print("\nAvailable templates:")
                 for tmpl in templates:
                     print(f"  {tmpl}")
-                    
+
             elif action == "3":
                 templates = manager.list_templates()
                 for i, tmpl in enumerate(templates):
                     print(f"  {i + 1}. {tmpl}")
-                    
+
                 idx = int(input("Choose a template to preview: ")) - 1
                 manager.preview_template(manager.load_template(templates[idx]))
-                
-            # elif action == "4":
-            #     templates = manager.list_templates()
-            #     for i, tmpl in enumerate(templates):
-            #         print("\n", f"  {i + 1}. {tmpl}")
-                    
-            #     idx = int(input("Choose a template to validate: ")) - 1
-                
-            #     manager.validate_template(
-            #         manager.load_template(templates[idx])
-            #     )
+
             elif action == "4":
                 templates = manager.list_templates()
                 for i, tmpl in enumerate(templates):
-                    print(f"  {i + 1}. {tmpl}")
+                    print("\n", f"  {i + 1}. {tmpl}")
 
                 try:
-                    idx = int(input("Choose a template to validate: ")) - 1
+                    idx = int(input("\nChoose a template to validate: ")) - 1
                     if idx < 0 or idx >= len(templates):
-                        print("Invalid selection. Please choose a valid template.")
+                        print(
+                            "Invalid selection. Please choose a valid template."
+                        )
                         return
 
                     template_name = templates[idx]
@@ -418,7 +516,9 @@ def main():
                     if template:
                         manager.validate_template(template, template_name)
                     else:
-                        print(f"Template '{template_name}' could not be loaded.")
+                        print(
+                            f"Template '{template_name}' could not be loaded."
+                        )
                 except ValueError:
                     print("Invalid input. Please enter a number.")
 
@@ -426,60 +526,60 @@ def main():
                 print("\nFile Template Management:")
                 print("  1) Add a New File Template")
                 print("  2) List File Templates")
-                
+
                 action = input("Choose an action (1-2): ").strip()
                 if action == "1":
                     manager.add_file_template()
                 elif action == "2":
                     manager.list_file_templates()
-                    
+
             elif action == "6":
                 print("Exiting AlphApex Directory Manager. Goodbye!")
                 break
-            
+
         elif choice == "2":
             templates = manager.list_templates()
             print("\nAvailable templates:")
-            
+
             for i, tmpl in enumerate(templates):
                 print(f"  {i + 1}. {tmpl}")
-                
+
             idx = int(input("Choose a template to generate: ")) - 1
             output_dir = input("Enter the output directory: ").strip()
-            
+
             manager.generate_from_template(templates[idx], output_dir)
-            
+
         elif choice == "3":
             source_dir = input("Enter the source directory to clone: ").strip()
             output_template_name = input(
                 "Enter the output template name: "
             ).strip()
- 
+
             manager.clone_directory(source_dir, output_template_name)
-            
+
         elif choice == "4":
             templates = manager.list_templates()
-            
+
             for i, tmpl in enumerate(templates):
                 print(f"  {i + 1}. {tmpl}")
-                
+
             idx = int(input("Choose a template to search: ")) - 1
-            
+
             query = input(
                 "Enter the file or directory to search for: "
             ).strip()
-            
+
             manager.search_template(templates[idx], query)
-            
+
         elif choice == "5":
             root_dir = input("Enter the root directory to map: ").strip()
-            
+
             output_map_file = input(
                 "Enter the output map filename (e.g., map.txt): "
             ).strip()
-            
+
             manager.export_directory_map(root_dir, output_map_file)
-             
+
         elif choice == "6":
             print("Exiting AlphApex Directory Manager. Goodbye!")
             break
