@@ -6,9 +6,9 @@
         },
         "Property": {
             "files": [
-                "xxxxx-PropMap.pdf",
-                "xxxxx-PropDetails.pdf",
-                "xxxxx-FloodReport.pdf"
+                {"name": "xxxxx-PropMap.pdf", "type": "empty"},
+                {"name": "xxxxx-PropDetails.pdf", "type": "empty"},
+                {"name": "xxxxx-FloodReport.pdf", "type": "empty"}
             ]
         },
         "Others": {
@@ -34,9 +34,9 @@
         },
         "Cadd": {
             "files": [
-                "xxxxx-Plan-SITE.dwg",
-                "xxxxx-Base-TOPO.dwg",
-                "xxxxx-Residence.dst"
+                {"name": "xxxxx-Plan-SITE.dwg", "type": "empty"},
+                {"name": "xxxxx-Base-TOPO.dwg", "type": "empty"},
+                {"name": "xxxxx-Residence.dst", "type": "empty"}
             ]
         }
     }
