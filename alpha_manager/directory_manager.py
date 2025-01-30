@@ -1,8 +1,10 @@
 import os
+import sys
 import json
 import shutil
 from pathlib import Path
 import argparse
+import subprocess
 
 script_dir = Path(__file__).parent
 
@@ -10,18 +12,34 @@ TEMPLATES_DIR = script_dir / "templates"
 DEFAULT_TEMPLATES_DIR = TEMPLATES_DIR / "defaults"
 LOG_FILE = script_dir / "directory_manager.log"
 FILE_TEMPLATES_DIR = TEMPLATES_DIR / "file_templates"
-USER_CREATED_DIRS = TEMPLATES_DIR / "user_created"
+USER_CREATED_DIR = TEMPLATES_DIR / "user_created"
+CONFIG_FILE = script_dir / "config.json"
 
 
 class TemplateManager:
     def __init__(self):
         self.ensure_directories()
 
+    def restart(self):
+        print("Returning to main menu...")
+        os.execv(sys.executable, [sys.executable, __file__])
+
+    def save_config(self, data):
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+  
+    def load_config(self):
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, "r") as f:
+                return json.load(f)
+        return None
+
     def ensure_directories(self):
         """Ensure required directories exist."""
-        TEMPLATES_DIR.mkdir(exist_ok=True)
-        DEFAULT_TEMPLATES_DIR.mkdir(exist_ok=True)
-        FILE_TEMPLATES_DIR.mkdir(exist_ok=True)
+        TEMPLATES_DIR.mkdir(exist_ok=True, parents=True)
+        DEFAULT_TEMPLATES_DIR.mkdir(exist_ok=True, parents=True)
+        FILE_TEMPLATES_DIR.mkdir(exist_ok=True, parents=True)
+        USER_CREATED_DIR.mkdir(exist_ok=True, parents=True)
 
     def log(self, message):
         """Log actions to a file."""
@@ -39,6 +57,9 @@ class TemplateManager:
         )
         templates.extend(
             [f"user_created/{t.name}" for t in TEMPLATES_DIR.glob("*.json")]
+        )
+        templates.extend(
+            [f"user_created/{t.name}" for t in USER_CREATED_DIR.glob("*.json")]
         )
         return templates
 
@@ -256,9 +277,6 @@ class TemplateManager:
         else:
             print(f"SUCCESS: {message}")
 
-        # if not os.path.isdir(source_dir):
-        #     print(f"'{source_dir}' is not a valid directory.")
-        #     return
         template = {
             "main_directory": os.path.basename(cleaned_path),
             "subdirectories": {},
@@ -298,9 +316,11 @@ class TemplateManager:
         else:
             print("No matches found.")
 
-    def generate_from_template(self, template_name, output_dir):
+    def generate_from_template(self, template_name, output_dir, project_number, project_name):
         """Generate directories and files from a template."""
         template = self.load_template(template_name)
+        if project_number and project_name != "":
+            template = self.modify_template(template, project_number, project_name)
         if not template:
             return
         if not self.validate_template(template, template_name):
@@ -396,16 +416,14 @@ class TemplateManager:
     ):
         """Generate a default template."""
         template = self.load_template(template_name)
-        # template = self.modify_template(template, project_number, project_name)
+        if not project_number and project_name == "":
+            template = self.modify_template(template, project_number, project_name)
         if not template:
             return
         if not self.validate_template(template, template_name):
             print("Generation aborted due to invalid template.")
             return
         template = self.modify_template(template, project_number, project_name)
-        # if not self.validate_template(template, template_name):
-        #     print("Generation aborted due to invalid template.")
-        #     return
         main_dir = Path(output_dir) / template["main_directory"]
         os.makedirs(main_dir, exist_ok=True)
         for subdir, contents in template["subdirectories"].items():
@@ -418,8 +436,6 @@ class TemplateManager:
 
 
 def main():
-    # print("Press Enter to use AlphApex Directory Manager")
-    # input()
     parser = argparse.ArgumentParser(description="Template Manager")
     parser.add_argument(
         "--generate",
@@ -436,17 +452,20 @@ def main():
         "--output",
         type=str,
         required=False,
+        default=".",
         help="Output directory"
     )
     parser.add_argument(
         "--project_name",
         type=str,
         required=False,
+        help="Project name- not required"
     )
     parser.add_argument(
         "--project_number",
         type=str,
         required=False,
+        help="Project number- not required"
     )
 
     args = parser.parse_args()
@@ -465,6 +484,23 @@ def main():
         )
         return
 
+    # while True:
+    config = manager.load_config()
+
+    if not config:
+        dir_path = input("Enter new output directory location or press ENTER for default: ").strip()
+        if dir_path == "":
+            dir_path = USER_CREATED_DIR
+        path = Path(dir_path)
+        config = {
+            "output_dir": f"{dir_path}"
+        }
+        if path.exists():
+            manager.save_config(config)
+            manager.restart()
+        else:
+            print("Invalid directory. Please enter a valid directory.")
+        
     while True:
         print("\nAlphApex Directory Manager\n\nChoose an action:")
         print("  1) Manage/Create Templates")
@@ -482,18 +518,21 @@ def main():
             print("  3) Preview Directory Template")
             print("  4) Validate Directory Template")
             print("  5) File Template Management")
+            print("  6) Return to Main Menu")
             print("  6) Exit")
             action = input("Choose an action (1-6): ").strip()
 
             if action == "1":
                 manager.create_template()
+                manager.restart()
 
             elif action == "2":
                 templates = manager.list_templates()
                 print("\nAvailable templates:")
                 for tmpl in templates:
                     print(f"  {tmpl}")
-
+                manager.restart()
+                
             elif action == "3":
                 templates = manager.list_templates()
                 for i, tmpl in enumerate(templates):
@@ -501,6 +540,7 @@ def main():
 
                 idx = int(input("Choose a template to preview: ")) - 1
                 manager.preview_template(manager.load_template(templates[idx]))
+                manager.restart()
 
             elif action == "4":
                 templates = manager.list_templates()
@@ -524,6 +564,7 @@ def main():
                         print(
                             f"Template '{template_name}' could not be loaded."
                         )
+                    manager.restart()
                 except ValueError:
                     print("Invalid input. Please enter a number.")
 
@@ -535,10 +576,15 @@ def main():
                 action = input("Choose an action (1-2): ").strip()
                 if action == "1":
                     manager.add_file_template()
+                    manager.restart()
                 elif action == "2":
                     manager.list_file_templates()
-
+                    manager.restart()
+            
             elif action == "6":
+                manager.restart()
+
+            elif action == "7":
                 print("Exiting AlphApex Directory Manager. Goodbye!")
                 break
 
@@ -548,11 +594,18 @@ def main():
 
             for i, tmpl in enumerate(templates):
                 print(f"  {i + 1}. {tmpl}")
-
+#
+#
+#
+#
+#
             idx = int(input("Choose a template to generate: ")) - 1
-            output_dir = input("Enter the output directory: ").strip()
+            proj_num = input("Enter the project number or press ENTER for default: ").strip()
+            proj_name = input("Enter the project name or press ENTER for default: ").strip()
+            output_dir = input("Enter the output directory or press ENTER to use user_created directory in templates: ").strip()
 
-            manager.generate_from_template(templates[idx], output_dir)
+            manager.generate_from_template(templates[idx], output_dir, proj_num, proj_name)
+            manager.restart()
 
         elif choice == "3":
             source_dir = input("Enter the source directory to clone: ").strip()
