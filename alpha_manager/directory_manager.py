@@ -22,12 +22,25 @@ class TemplateManager:
 
     def restart(self):
         print("Returning to main menu...")
-        os.execv(sys.executable, [sys.executable, __file__])
+
+        # Determine the correct script path
+        if getattr(sys, 'frozen', False):  # If running as a PyInstallerexe
+            script_path = Path(sys.executable).resolve()
+        elif '__file__' in globals():  # If running as a script
+            script_path = Path(__file__).resolve()
+        elif sys.argv[0]:  # If running interactively with an explicit script
+            script_path = Path(sys.argv[0]).resolve()
+        else:
+            print("Error: Unable to determine script path.")
+            sys.exit(1)
+
+        # Restart the script
+        os.execv(sys.executable, [sys.executable, str(script_path)])
 
     def save_config(self, data):
         with open(CONFIG_FILE, "w") as f:
             json.dump(data, f, indent=4)
-  
+
     def load_config(self):
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, "r") as f:
@@ -484,7 +497,6 @@ def main():
         )
         return
 
-    # while True:
     config = manager.load_config()
 
     if not config:
@@ -500,27 +512,27 @@ def main():
             manager.restart()
         else:
             print("Invalid directory. Please enter a valid directory.")
-        
+
     while True:
         print("\nAlphApex Directory Manager\n\nChoose an action:")
         print("  1) Manage/Create Templates")
-        print("  2) Generate Directory Templates")
+        print("  2) Generate Directory From Template")
         print("  3) Clone Existing Directory to Template")
         print("  4) Search File/Directory in Templates")
         print("  5) Export Directory Map")
         print("  6) Exit")
-        choice = input("Enter your choice (1-6): ").strip()
+        choice = input("Enter your choice (1-6) or '-h' for help: ").strip()
 
         if choice == "1":
             print("\nDirectory Template Management:")
-            print("  1) Create Directory Template")
+            print("  1) Generate Directory")
             print("  2) List Directory Templates")
             print("  3) Preview Directory Template")
             print("  4) Validate Directory Template")
             print("  5) File Template Management")
             print("  6) Return to Main Menu")
-            print("  6) Exit")
-            action = input("Choose an action (1-6): ").strip()
+            print("  7) Exit")
+            action = input("Choose an action (1-6) or '-h' for help: ").strip()
 
             if action == "1":
                 manager.create_template()
@@ -532,7 +544,7 @@ def main():
                 for tmpl in templates:
                     print(f"  {tmpl}")
                 manager.restart()
-                
+
             elif action == "3":
                 templates = manager.list_templates()
                 for i, tmpl in enumerate(templates):
@@ -580,7 +592,7 @@ def main():
                 elif action == "2":
                     manager.list_file_templates()
                     manager.restart()
-            
+
             elif action == "6":
                 manager.restart()
 
@@ -588,17 +600,32 @@ def main():
                 print("Exiting AlphApex Directory Manager. Goodbye!")
                 break
 
+            elif action == "-h":
+                print("\n\n\n\n\nDirectory Template Management Help:\n")
+
+                print("  1) Generate Directory: Create a new directory from a template. AlphApex comes with a few default templates.")
+
+                print("  2) Create a new directory template from scratch")
+
+                print("  3) Preview Directory Template: Display the structure of a directory template")
+
+                print("  4) Validate Directory Template: Check the structure of a directory template")
+
+                print("  5) File Template Management: Manage file templates")
+
+                print("  6) Return to Main Menu: Go back to the main menu")
+
+                print("  7) Exit: Exit the program")
+
+                input("Press Enter to continue...\n")
+
         elif choice == "2":
             templates = manager.list_templates()
             print("\nAvailable templates:")
 
             for i, tmpl in enumerate(templates):
                 print(f"  {i + 1}. {tmpl}")
-#
-#
-#
-#
-#
+
             idx = int(input("Choose a template to generate: ")) - 1
             proj_num = input("Enter the project number or press ENTER for default: ").strip()
             proj_name = input("Enter the project name or press ENTER for default: ").strip()
@@ -641,6 +668,23 @@ def main():
         elif choice == "6":
             print("Exiting AlphApex Directory Manager. Goodbye!")
             break
+
+        elif choice == "-h":
+            print("\n\n\n\n\nDirectory Template Management HELP:\n")
+
+            print("  1) Create a new directory template from scratch")
+
+            print("  2) Generate Directory: Create a new directory from a template. AlphApex comes with a few default templates.")
+
+            print("  3) Clone Existing Directory to Template: Clone an existing directory structure into a template")
+
+            print("  4) Search File/Directory in Templates: Search for a file or directory in a template")
+
+            print("  5) Export Directory Map: Export the directory structure as a json map for visualization")
+
+            print("  6) Exit: Exit the program\n")
+
+            input("Press Enter to continue...")
 
 
 if __name__ == "__main__":
