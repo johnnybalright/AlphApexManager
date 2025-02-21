@@ -1,3 +1,4 @@
+# directory_manager.py
 import os
 import sys
 import json
@@ -17,14 +18,83 @@ CONFIG_FILE = script_dir / "config.json"
 
 
 class TemplateManager:
+    """
+    TemplateManager is a class responsible for managing directory templates.
+    It provides methods to create, save, load, validate, and generate
+    directory structures based on templates. It also includes
+    functionality to restart the script, log actions, and handle
+    configuration data.
+    
+    Methods:
+        __init__():
+            Initializes the TemplateManager instance and ensures required directories exist.
+        restart():
+            Restarts the current script, optionally clearing the console.
+        save_config(data):
+            Saves the given configuration data to a JSON file.
+        load_config():
+            Loads configuration data from a JSON file.
+        ensure_directories():
+            Ensures required directories exist.
+        log(message):
+            Logs actions to a file.
+        list_templates():
+            Lists available templates.
+        create_template():
+            Creates a new template based on user input.
+        load_template(template_name):
+            Loads a template by name.
+        save_template(template_name, data, is_default=False):
+            Saves a template to a file.
+        add_file_template():
+            Adds a new file template to the FILE_TEMPLATES_DIR.
+        list_file_templates():
+            Lists all file templates in the FILE_TEMPLATES_DIR.
+        validate_template(template, template_name):
+            Validates a template's structure and provides detailed error messages.
+        preview_template(template):
+            Previews the template's structure.
+        validate_directory_path(path):
+            Validates a directory path and provides detailed feedback.
+        clone_directory(source_dir, output_template_name):
+            Clones an existing directory structure into a template.
+        export_directory_map(root_dir, output_map_file):
+            Exports the directory structure as a map.
+        search_template(template_name, query):
+            Searches for a file or directory in a template.
+        generate_from_template(
+            template_name,
+            output_dir,
+            project_number,
+            project_name):
+            Generates directories and files from a template.
+        display_template_tree(template):
+            Displays the template as a tree structure.
+        modify_template(template, project_number, project_name):
+            Modifies the given template by replacing 'xxxxx' in
+            file names with the project_number and updating the
+            main_directory key with "project_number-project_name".
+        generate_default(project_number, project_name,
+            template_name="defaults/ace_basic.json", output_dir="output"):
+            Generates a default template.
+        """
     def __init__(self):
         self.ensure_directories()
 
     def restart(self):
+        """
+        Restarts the current script.
+        This method determines the correct script path based on the execution context
+        (PyInstaller executable, script, or interactive mode). It then prompts the user
+        to decide whether to clear the console. Finally, it reruns the script in the same
+        Python process.
+        Raises:
+            SystemExit: If the script path cannot be determined.
+        """
         print("Returning to main menu...")
 
         # Determine the correct script path
-        if getattr(sys, 'frozen', False):  # If running as a PyInstallerexe
+        if getattr(sys, 'frozen', False):  # If running as a PyInstaller exe
             script_path = Path(sys.executable).resolve()
         elif '__file__' in globals():  # If running as a script
             script_path = Path(__file__).resolve()
@@ -34,10 +104,30 @@ class TemplateManager:
             print("Error: Unable to determine script path.")
             sys.exit(1)
 
-        # Restart the script
-        os.execv(sys.executable, [sys.executable, str(script_path)])
+        resp = input("Do you want to clear previous outputs/inputs from console? (y/n): ").strip().lower()
+
+        if resp == "y":
+            # Clear the console to reset cursor visibility issues
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif resp == "n":
+            print("....########################################################....")
+            print("....########################################################....")
+
+        # Rerun the script in the same Python process
+        with open(script_path, "rb") as script_file:
+            script_code = compile(script_file.read(), str(script_path), 'exec')
+            exec(script_code, globals())
 
     def save_config(self, data):
+        """
+        Save the given configuration data to a JSON file.
+
+        Args:
+            data (dict): The configuration data to be saved.
+
+        Raises:
+            IOError: If there is an error writing to the file.
+        """
         with open(CONFIG_FILE, "w") as f:
             json.dump(data, f, indent=4)
 
@@ -536,6 +626,8 @@ def main():
 
             if action == "1":
                 manager.create_template()
+                # print("\n\n")
+                input("Template created. Press Enter to continue...")
                 manager.restart()
 
             elif action == "2":
@@ -543,6 +635,8 @@ def main():
                 print("\nAvailable templates:")
                 for tmpl in templates:
                     print(f"  {tmpl}")
+                # print("\n\n")
+                input("\nPress Enter to continue...")
                 manager.restart()
 
             elif action == "3":
