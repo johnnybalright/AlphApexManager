@@ -8,7 +8,8 @@
             "files": [
                 {"name": "xxxxx-PropMap.pdf", "type": "empty"},
                 {"name": "xxxxx-PropDetails.pdf", "type": "empty"},
-                {"name": "xxxxx-FloodReport.pdf", "type": "empty"}
+                {"name": "xxxxx-FloodReport.pdf", "type": "empty"},
+                {"name": "xxxxx-RiverMile.pdf", "type": "empty"}
             ]
         },
         "Others": {
@@ -20,10 +21,42 @@
         "Others/Survey": {
             "files": []
         },
+        "HECRAS": {
+            "files": []
+        },
+        "HECRAS/Model": {
+            "files": []
+        },
+        "HECRAS/Report": {
+            "files": [
+                {"name": "0_certification_page.pdf", "type": "empty"},
+                {"name": "1_prop_map.pdf", "type": "empty"},
+                {"name": "2_prop_details.pdf", "type": "empty"},
+                {"name": "3_flood_report.pdf", "type": "empty"},
+                {"name": "4_river_mile.pdf", "type": "empty"},
+                {"name": "5_model_table.pdf", "type": "empty"},
+                {"name": "6_pre_model_figure.pdf", "type": "empty"},
+                {"name": "7_post_model_figure.pdf", "type": "empty"},
+                {"name": "8_pre_model_output.pdf", "type": "empty"},
+                {"name": "9_post_model_output.pdf", "type": "empty"},
+            ]
+        },
         "PM": {
             "files": []
         },
         "Plans": {
+            "files": []
+        },
+        "Plans/Adam": {
+            "files": []
+        },
+        "Plans/John": {
+            "files": []
+        },
+        "Plans/Adam/mm.dd.yyyy": {
+            "files": []
+        },
+        "Plans/John/mm.dd.yyyy": {
             "files": []
         },
         "Deliverables": {
