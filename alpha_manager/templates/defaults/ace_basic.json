@@ -62,6 +62,14 @@
         "Deliverables": {
             "files": []
         },
+        "Deliverables/yyyy.mm.dd-District": {
+            "files": [
+                {"name": "lname-FinalPlans.pdf", "type": "empty"},
+            ]
+        },
+        "Deliverables/yyyy.mm.dd-County": {
+            "files": []
+        },
         "Permitting": {
             "files": []
         },
